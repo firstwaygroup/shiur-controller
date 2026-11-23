@@ -66,9 +66,10 @@ async function main() {
   let s = await post('/api/mode', { mode: 'screen' });
   check('SCREEN: shows the screen, app becomes the strip', s.mode === 'screen' && s.panel === 'small' && obsState().current === 'Shiur - Screen', [s.mode, s.panel]);
   check('SCREEN: the wall shows the screen', item('Shiur - Room', 'Shiur Laptop Screen').enabled === true && item('Shiur - Room', 'Shiur Title Card').enabled === false);
+  check('SCREEN: nothing else peeks out around the screen on the wall', item('Shiur - Room', 'Shiur Material').enabled === false);
   s = await post('/api/mode', { mode: 'me' });
   check('ME: Zoom sees you, the app is big again', s.mode === 'me' && s.panel === 'big' && obsState().current === 'Shiur - Me', [s.mode, s.panel]);
-  check('ME: the wall shows the title', item('Shiur - Room', 'Shiur Title Card').enabled === true);
+  check('ME: the wall shows the title', item('Shiur - Room', 'Shiur Title Card').enabled === true && item('Shiur - Room', 'Shiur Material').enabled === true);
   const ping = await get('/api/ping');
   check('ping tells the app the size and mode', ping.panel === 'big' && ping.mode === 'me', ping);
 
@@ -88,6 +89,10 @@ async function main() {
   check('a picture is SHOWn, app stays big', s.mode === 'show' && s.panel === 'big', [s.mode, s.panel]);
   s = await post('/api/show', { id: added.item.id });
   check('a chart opens live on the screen (SCREEN, strip)', s.mode === 'screen' && s.panel === 'small', [s.mode, s.panel]);
+  await post('/api/mode', { mode: 'me' });
+  s = await post('/api/mode', { mode: 'show' });
+  check('SHOW with a chart opens it live too, never a still copy', s.mode === 'screen' && s.panel === 'small', [s.mode, s.panel]);
+  check('the app is told to bring the chart onto the laptop screen', (await get('/api/ping')).action === 'live');
   const bad = await post('/api/recent/add', { name: '../server.js' });
   check('files outside Downloads are refused', bad._status === 404);
 

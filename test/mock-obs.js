@@ -8,7 +8,8 @@ const LOG = process.argv[2] || null;
 const SHOT = 'data:image/jpg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAASACADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDFoooruOUKKKKACiiigAooooA//9k=';
 const b64 = s => crypto.createHash('sha256').update(s).digest('base64');
 const st = { scenes: ['Scene'], current: 'Scene', inputs: {}, items: { Scene: [] }, next: 1, rec: false, vc: false, projectors: [], log: [] };
-const dump = () => { if (LOG) fs.writeFileSync(LOG, JSON.stringify(st, null, 2)); };
+// Written in one go (temp file + rename) so the tests never read half a file.
+const dump = () => { if (!LOG) return; const t = JSON.stringify(st, null, 2); try { fs.writeFileSync(LOG + '.tmp', t); fs.renameSync(LOG + '.tmp', LOG); } catch (e) { try { fs.writeFileSync(LOG, t); } catch (e2) { /* ignore */ } } };
 let clients = [];
 const emit = (eventType, eventData) => clients.forEach(ws => ws.send(JSON.stringify({ op: 5, d: { eventType, eventIntent: 1, eventData } })));
 const item = (sc, id) => { const it = (st.items[sc] || []).find(i => i.sceneItemId === id); if (!it) throw new Error('No item ' + id + ' in ' + sc); return it; };
@@ -57,6 +58,7 @@ wss.on('connection', ws => {
       const { requestType, requestId, requestData } = m.d;
       st.log.push(requestType);
       let out; try { out = { ok: true, data: handle(requestType, requestData || {}) }; } catch (e) { out = { ok: false, c: e.message }; }
+      dump();   // save before answering, so the tests see the change as soon as the engine replies
       ws.send(JSON.stringify({ op: 7, d: { requestType, requestId, requestStatus: { result: out.ok, code: out.ok ? 100 : 600, comment: out.c }, responseData: out.data } }));
     }
     dump();

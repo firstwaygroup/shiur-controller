@@ -1,3 +1,21 @@
+# House rules — every chat, every project, no exceptions
+
+1. Plain English, one step at a time. End with a short summary.
+2. Spec first: say what you understood and what will change, then wait for my yes.
+3. Change only what was agreed. Ask before touching anything else.
+4. Claude makes every change in GitHub. I never handle files or zips.
+5. If the project has a test copy, change it there first. Go live only after it works.
+6. Run the project's tests before every commit. All must pass. New work gets a test.
+7. After it goes live, check it on the live site and on a phone, then say so.
+8. Secrets only in Render's settings. Never in GitHub, a chat or a screenshot.
+9. Never delete data. Archive it instead. Anything that can't be undone needs my OK first.
+10. Keep it simple: big clear buttons, plain words. Hebrew runs right to left everywhere.
+11. When a job's done, mark it Done on the board and update "where we're up to".
+
+Job board: https://claude.ai/artifact/BorE9SeCtVdAcgwbqgijGQ
+
+---
+
 # Shiur Controller — notes for Claude
 
 Moshe's own app for his nightly Daf Yomi shiur (in English, at Chevras Shas, 8:05–9:00pm). About 8 people sit in the

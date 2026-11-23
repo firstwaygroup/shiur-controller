@@ -90,6 +90,8 @@ C# must stay **C# 5** (no `$""`, `?.`, `=>` members, `nameof`). Check with mono 
   dialog when joining"; turn on "Automatically join audio by computer". Zoom mirrors self-view only.
 - Zoom meeting window class: `ZPContentViewWndClass`; home window: `ZPPTMainFrmWndClassEx`. Other Zoom windows
   (questions/dialogs) are brought onto the laptop screen when not in SCREEN mode.
+- A zip downloaded in a browser marks its files "from the internet" (Windows warns before running them). `Install Shiur.bat`
+  clears the mark on the installed files with `Unblock-File`. The updater downloads with WebClient, which adds no mark.
 - The laptop camera is soft; a 1080p USB webcam on a small stand is planned. The engine sets the camera to its best
   resolution and OBS output to at least 1280x720.
 

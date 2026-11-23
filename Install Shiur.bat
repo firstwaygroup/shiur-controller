@@ -27,6 +27,8 @@ rem 3. Copy the program. Your list and settings (the "data" folder) are kept.
 if not exist "%DEST%" mkdir "%DEST%"
 robocopy "%~dp0." "%DEST%" /E /XD data node_modules test .github .git /XF "Install Shiur.bat" /NFL /NDL /NJH /NJS /NP >nul
 powershell -NoProfile -ExecutionPolicy Bypass -File "%DEST%\app\carry-settings.ps1" -Dest "%DEST%" -Src "%~dp0."
+rem    Files from a downloaded zip are marked "from the internet"; clear that so Windows does not warn each time.
+powershell -NoProfile -Command "Get-ChildItem -LiteralPath $env:LOCALAPPDATA\Shiur -Recurse -File | Unblock-File -ErrorAction SilentlyContinue"
 
 rem 4. The Shiur app. A release from GitHub already has it ready; from the source code, build it here.
 if exist "%~dp0Shiur.exe" goto built

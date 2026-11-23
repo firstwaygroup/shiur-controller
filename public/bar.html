@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#11151C">
+<title>Shiur bar</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/app.css">
+<style>
+:root{--blue:#5AA9F0;--blueInk:#04203A;--greenInk:#05200F;--card:#1A1F27}
+html,body{height:100%;overflow:hidden;background:#11151C}
+body{font-size:16px;user-select:none;-webkit-user-select:none}
+button{font:inherit}
+.svg{flex-shrink:0}
+
+/* ---------- the big app (ME / SHOW: nobody sees the laptop) ---------- */
+.big{height:100%;display:flex;flex-direction:column;padding:14px 18px 14px 14px;gap:12px}
+.head{display:flex;align-items:center;gap:12px;min-height:40px}
+.dot{width:14px;height:14px;border-radius:7px;flex-shrink:0;background:var(--muted)}
+.dot.green{background:var(--green);box-shadow:0 0 0 5px rgba(61,190,132,.16)}
+.dot.amber{background:var(--amber)} .dot.red{background:var(--red)}
+.head .t{flex:1;min-width:0;font-size:24px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ghost{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line2);background:transparent;color:var(--muted);display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:500}
+.ghost:hover{color:var(--text);border-color:#6A7384}
+.msg{padding:10px 14px;border-radius:12px;font-size:15px;line-height:1.4;background:var(--redSoft);color:var(--redText);border:1px solid #6B2E31;cursor:pointer}
+.msg.warn{background:#3A2A12;color:var(--amberText);border-color:#5C4719}
+
+.modes3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.mode{border-radius:18px;border:2px solid var(--line2);background:var(--surface);color:var(--text);padding:12px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:104px;text-align:center}
+.mode b{font-size:28px;letter-spacing:.03em;line-height:1.1}
+.mode span{font-size:14px;color:var(--muted);font-weight:500}
+.mode:not(.on):hover{border-color:#6A7384}
+.mode.me.on{background:var(--amber);border-color:var(--amber);color:var(--amberInk)}
+.mode.show.on{background:var(--green);border-color:var(--green);color:var(--greenInk)}
+.mode.screen.on{background:var(--blue);border-color:var(--blue);color:var(--blueInk)}
+.mode.on span{color:inherit;opacity:.8}
+
+.now{display:flex;align-items:center;gap:10px;min-height:58px;padding:8px 10px 8px 16px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+.now .txt{flex:1;min-width:0;font-size:17px;line-height:1.3;color:var(--muted)}
+.now .txt b{color:var(--text)}
+.bb{min-height:50px;min-width:50px;padding:0 16px;border-radius:14px;border:1px solid var(--line2);background:var(--surface);color:var(--text);font-size:17px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.bb:not(:disabled):hover{border-color:#6A7384}
+.bb:disabled{opacity:.35;cursor:default}
+.bb.amber{background:var(--amber);border-color:var(--amber);color:var(--amberInk)}
+.tools{display:flex;gap:6px}
+
+.cols{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:12px}
+.cols.editing{grid-template-columns:minmax(0,1fr)}
+.cols.editing .findcard{display:none}
+.card2{background:var(--card);border:1px solid var(--line);border-radius:18px;display:flex;flex-direction:column;min-height:0}
+.ch{display:flex;align-items:center;gap:8px;padding:12px 12px 8px 16px}
+.ch h2{margin:0;flex:1;font-size:15px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.list{flex:1;min-height:0;overflow-y:auto;padding:0 8px 10px;display:flex;flex-direction:column;gap:6px;scrollbar-width:thin;scrollbar-color:#3A414D transparent}
+.it{display:flex;align-items:center;gap:12px;min-height:66px;padding:6px 10px;border-radius:14px;border:2px solid transparent;background:var(--surface);color:var(--text);text-align:left;width:100%}
+.it:hover{border-color:#3A414D}
+.it.cur{border-color:var(--green);background:#14251D}
+.it .n{font-size:15px;color:var(--muted);width:20px;text-align:right;flex-shrink:0}
+.th{width:96px;height:54px;border-radius:8px;background:var(--surface2);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.th img{width:100%;height:100%;object-fit:cover}
+.it .nm{flex:1;min-width:0;font-size:18px;font-weight:500;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.live{flex-shrink:0;font-size:12px;font-weight:600;letter-spacing:.04em;color:#9FCBF5;background:#132A40;border-radius:8px;padding:4px 8px;text-transform:uppercase}
+.empty{color:var(--muted);font-size:16px;line-height:1.5;padding:18px 10px;text-align:center}
+.erow{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:8px;align-items:center;padding:6px;border-radius:14px;background:var(--surface)}
+.erow input{min-height:50px;font-size:17px}
+.erow .th{width:72px;height:42px}
+.ib{width:50px;height:50px;border-radius:12px;border:1px solid var(--line2);background:var(--bg);color:var(--text);display:inline-flex;align-items:center;justify-content:center;padding:0}
+.ib.del{color:var(--redText);border-color:#6B3438}
+.ib.del.armed{background:var(--red);color:#2A0607}
+.ib:disabled{opacity:.3}
+
+.find{padding:0 12px 12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;min-height:0}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{min-height:66px;border-radius:14px;border:1px solid var(--line2);background:var(--surface);color:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px;text-align:center}
+.tile b{font-size:18px}
+.tile small{font-size:12px;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile:hover{border-color:var(--amber)}
+.tile.files{grid-column:1 / -1;flex-direction:row;gap:12px;min-height:60px}
+.tile.empty2{border-style:dashed;color:var(--muted)}
+.hint{font-size:14px;line-height:1.45;color:var(--muted);margin:2px 4px 0}
+.link{background:none;border:0;color:var(--amberText);font-size:14px;padding:4px;text-decoration:underline;align-self:flex-start}
+
+.foot{display:flex;align-items:center;gap:12px}
+.foot .hint{flex:1;margin:0}
+.end{min-height:48px;padding:0 22px;border-radius:14px;border:1px solid #6B3438;background:transparent;color:var(--redText);font-size:16px;font-weight:600}
+.end.armed{background:var(--red);border-color:var(--red);color:#2A0607}
+
+/* ---------- the strip (SCREEN, or while you look something up) ---------- */
+.stripbar{display:none;height:100%;align-items:center;gap:10px;padding:8px 12px}
+body.strip .big{display:none}
+body.strip .stripbar{display:flex}
+.stripbar .mode{min-height:0;height:100%;max-height:76px;width:118px;padding:4px;border-radius:14px;flex-shrink:0}
+.stripbar .mode b{font-size:21px}
+.stripbar .st{flex:1;min-width:0;display:flex;align-items:center;gap:10px;font-size:17px;line-height:1.3;color:var(--muted);padding:0 6px}
+.stripbar .st b{color:var(--text)}
+.stripbar .bb{height:100%;max-height:68px}
+.onair{display:inline-block;width:12px;height:12px;border-radius:6px;background:var(--red);box-shadow:0 0 0 4px rgba(240,86,91,.25);flex-shrink:0;animation:pulse 1.6s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 7px rgba(240,86,91,.08)}}
+@media (prefers-reduced-motion:reduce){.onair{animation:none}}
+
+/* ---------- sheets: add to the list, my downloads ---------- */
+.sheet{position:fixed;inset:0;background:#11151C;z-index:20;display:flex;flex-direction:column;padding:16px 18px;gap:14px}
+.sheet .sh{display:flex;align-items:center;gap:12px}
+.sheet .sh h2{margin:0;flex:1;font-size:24px}
+.pick{min-height:84px;border-radius:18px;border:2px dashed #3DBE84;background:#13221B;color:var(--greenText);font-size:20px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:12px;padding:10px;text-align:center}
+.pick small{display:block;font-size:14px;font-weight:500;color:#A6D9BF}
+.row{display:flex;gap:10px}
+.row input{flex:1;min-height:54px;font-size:17px}
+.grid{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;align-content:start}
+.ft{position:relative;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--text);padding:0 0 8px;display:flex;flex-direction:column;gap:6px;text-align:left;overflow:hidden}
+.ft:hover{border-color:#6A7384}
+.ft .pv{aspect-ratio:16/10;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.ft .pv img{width:100%;height:100%;object-fit:cover}
+.ft .fn{padding:0 10px;font-size:14px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.ft .fk{padding:0 10px;font-size:12px;color:var(--muted)}
+.ft.added{border-color:var(--green)}
+.ft .ok{position:absolute;top:8px;right:8px;background:var(--green);color:var(--greenInk);border-radius:10px;font-size:13px;font-weight:700;padding:3px 8px}
+.sub{font-size:15px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:4px 0 -4px}
+
+.drop{position:fixed;inset:8px;border:3px dashed #3DBE84;border-radius:20px;background:rgba(17,21,28,.92);display:flex;align-items:center;justify-content:center;text-align:center;color:#7FE0B2;font-size:22px;font-weight:600;padding:20px;z-index:40;pointer-events:none}
+.over{position:fixed;inset:0;background:#11151C;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:20px;z-index:50;color:var(--muted);font-size:17px;line-height:1.45}
+.over h2{margin:0;color:var(--text);font-size:26px}
+body.strip .over{flex-direction:row;font-size:15px} body.strip .over h2{font-size:18px}
+.toast{bottom:16px;font-size:16px}
+</style>
+</head>
+<body>
+
+<!-- The big app -->
+<div class="big">
+  <div class="head">
+    <span class="dot" id="dot" aria-hidden="true"></span>
+    <span class="t" id="title" dir="auto">Daf Yomi shiur</span>
+    <button class="ghost" id="smallBtn" type="button" title="Make the app a strip so you can use your screen">
+      <svg class="svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      Make small
+    </button>
+    <button class="ghost" id="setupBtn" type="button">
+      <svg class="svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      Setup
+    </button>
+  </div>
+  <div class="msg" id="msg" hidden></div>
+
+  <div class="modes3" role="group" aria-label="What everyone sees">
+    <button class="mode me" data-mode="me" type="button" aria-pressed="false"><b>ME</b><span>Zoom sees you</span></button>
+    <button class="mode show" data-mode="show" type="button" aria-pressed="false"><b>SHOW</b><span>Show from the list</span></button>
+    <button class="mode screen" data-mode="screen" type="button" aria-pressed="false"><b>SCREEN</b><span>Show my screen</span></button>
+  </div>
+
+  <div class="now">
+    <div class="txt" id="nowText"></div>
+    <div class="tools" id="picTools" hidden>
+      <button class="bb" data-view="out" type="button" aria-label="Smaller">&minus;</button>
+      <button class="bb" data-view="in" type="button" aria-label="Bigger">+</button>
+      <button class="bb" data-view="fit" type="button">Fit</button>
+    </div>
+    <div class="tools" id="vidTools" hidden>
+      <button class="bb" id="playBtn" type="button">Pause</button>
+      <button class="bb" id="restartBtn" type="button">From start</button>
+    </div>
+    <button class="bb" id="prev" type="button"><svg class="svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Back</button>
+    <button class="bb" id="next" type="button">Next<svg class="svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+  </div>
+
+  <div class="cols" id="cols">
+    <section class="card2" aria-labelledby="listH">
+      <div class="ch">
+        <h2 id="listH">Tonight's list</h2>
+        <button class="bb amber" id="addBtn" type="button"><svg class="svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add</button>
+        <button class="bb" id="editBtn" type="button">Edit</button>
+      </div>
+      <div class="list" id="list"></div>
+    </section>
+    <section class="card2 findcard" aria-labelledby="findH">
+      <div class="ch"><h2 id="findH">Find something</h2></div>
+      <div class="find">
+        <div class="tiles" id="tiles"></div>
+        <p class="hint">It opens on your screen. Nobody sees it until you press <b>SCREEN</b>.</p>
+        <button class="link" id="editTiles" type="button">Change these buttons</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="foot">
+    <p class="hint" id="footHint">Tap the Zoom tiles to open Zoom big.</p>
+    <button class="end" id="endBtn" type="button">End shiur</button>
+  </div>
+</div>
+
+<!-- The strip -->
+<div class="stripbar">
+  <span class="dot" id="dot2" aria-hidden="true"></span>
+  <button class="mode me" data-mode="me" type="button" aria-pressed="false"><b>ME</b></button>
+  <button class="mode show" data-mode="show" type="button" aria-pressed="false"><b>SHOW</b></button>
+  <button class="mode screen" data-mode="screen" type="button" aria-pressed="false"><b>SCREEN</b></button>
+  <div class="st" id="stripText"></div>
+  <button class="bb" id="prev2" type="button" aria-label="Back"><svg class="svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <button class="bb" id="next2" type="button" aria-label="Next"><svg class="svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+  <button class="bb amber" id="panelBtn" type="button"><svg class="svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Open the app</button>
+</div>
+
+<!-- Add to tonight's list -->
+<div class="sheet" id="addSheet" hidden>
+  <div class="sh"><h2>Add to tonight's list</h2><button class="bb amber" id="addDone" type="button">Done</button></div>
+  <label class="pick" for="files">
+    <svg class="svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+    <span>Choose files from this laptop<small>Pictures, videos, Claude charts and PDFs. Or drag them here.</small></span>
+  </label>
+  <input id="files" type="file" multiple accept="image/*,video/*,.html,.htm,.pdf" hidden>
+  <div class="row">
+    <label class="sr" for="linkIn">Web address</label>
+    <input id="linkIn" type="url" placeholder="Or paste a web address (MDY page, picture...)">
+    <button class="bb amber" id="linkAdd" type="button">Add</button>
+  </div>
+  <div class="sub">Your recent downloads (tap to add)</div>
+  <div class="grid" id="addGrid"></div>
+</div>
+
+<!-- My downloads: open one on screen -->
+<div class="sheet" id="filesSheet" hidden>
+  <div class="sh"><h2>My downloads</h2><button class="bb" id="filesClose" type="button">Close</button></div>
+  <p class="hint" style="font-size:16px;margin:0">Tap one to open it on your screen. Nobody sees it until you press <b>SCREEN</b>.</p>
+  <div class="grid" id="openGrid"></div>
+</div>
+
+<div class="drop" id="drop" hidden>Drop it here to add it</div>
+<div class="over" id="lost" hidden><h2>Starting...</h2><span>Getting everything ready.</span></div>
+<div class="over" id="ended" hidden><h2>Shiur ended</h2><span>Everything is closing. Remember to end the meeting in Zoom.</span></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  var S = null, editing = false, tiles = [];
+  var $ = function (id) { return document.getElementById(id); };
+  var all = function (sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var tt = null;
+  function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(function () { t.classList.remove('show'); }, 2600); }
+  function post(url, body) {
+    return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) { toast(j.error || 'Something went wrong'); return null; } return j; }); })
+      .catch(function () { toast('The Shiur app is not running'); return null; });
+  }
+  // Opens in this laptop's browser. (When testing without the Shiur app, open a tab instead.)
+  function opened(j) { if (j && j.opened === false && j.url) window.open(j.url, '_blank'); return j; }
+
+  function isPicture(it) { return it && (it.type === 'image' || (it.type === 'link' && it.picture)); }
+  function isLive(it) { return it && (it.type === 'page' || (it.type === 'link' && !it.picture)); }
+  function picSrc(it) { return it.type === 'image' ? '/media/' + encodeURIComponent(it.file) : it.url; }
+  var ICON = {
+    video: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>',
+    web: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg>',
+    page: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 15l3-3 3 2 4-5"/></svg>',
+    pdf: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>',
+    folder: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>'
+  };
+  function thumb(it) {
+    if (isPicture(it)) return '<img alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" src="' + esc(picSrc(it)) + '">';
+    if (it.type === 'video') return ICON.video;
+    if (it.type === 'page') return /\.pdf$/i.test(it.file || '') ? ICON.pdf : ICON.page;
+    return ICON.web;
+  }
+
+  // ---------- drawing ----------
+  var lastListKey = '';
+  function render() {
+    if (!S) return;
+    $('ended').hidden = !S.ended;
+    var items = S.items || [], it = S.current;
+    $('title').textContent = S.title || 'Daf Yomi shiur';
+    var ready = S.obs.connected && S.obs.scenesReady;
+    var dotClass = 'dot ' + (ready && !S.message ? 'green' : S.obs.connected ? 'amber' : 'red');
+    $('dot').className = dotClass; $('dot2').className = dotClass;
+    var msg = S.message || (!S.obs.connected ? (S.obs.error || 'OBS is not connected.') : (!S.obs.scenesReady ? 'Setup is not finished. Tap here to open Setup.' : ''));
+    var m = $('msg'); m.hidden = !msg; m.textContent = msg; m.className = S.message ? 'msg' : 'msg warn';
+
+    all('.mode').forEach(function (b) { var on = b.getAttribute('data-mode') === S.mode; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+
+    var showing = S.mode === 'show' && it;
+    $('nowText').innerHTML = S.mode === 'screen' ? 'Everyone sees <b>your screen</b>.'
+      : showing ? 'Everyone sees: <b dir="auto">' + esc(it.title) + '</b>'
+      : (items.length ? 'Nobody sees your screen. Tap something in the list to show it.' : 'Nobody sees your screen. Tap <b>Add</b> to fill tonight\'s list.');
+    $('picTools').hidden = !(showing && isPicture(it));
+    $('vidTools').hidden = !(showing && it.type === 'video');
+    $('playBtn').textContent = S.media && S.media.paused ? 'Play' : 'Pause';
+    ['prev', 'next', 'prev2', 'next2'].forEach(function (id) { $(id).disabled = !items.length; });
+
+    // the strip
+    var st;
+    if (S.mode === 'screen') st = '<span class="onair" aria-hidden="true"></span><span>Everyone sees <b>your screen</b> (above this strip).</span>';
+    else if (S.mode === 'show' && it) st = '<span>Everyone sees: <b dir="auto">' + esc(it.title) + '</b></span>';
+    else st = '<span>Only you see your screen. Press <b>SCREEN</b> to show it.</span>';
+    $('stripText').innerHTML = st;
+    $('panelBtn').lastChild.nodeValue = S.mode === 'screen' ? 'Stop & open the app' : 'Open the app';
+
+    $('listH').textContent = "Tonight's list" + (items.length ? ' (' + items.length + ')' : '');
+    $('editBtn').textContent = editing ? 'Done' : 'Edit';
+    $('editBtn').className = editing ? 'bb amber' : 'bb';
+    $('addBtn').hidden = editing;
+    $('cols').classList.toggle('editing', editing);
+    if (!editing) {
+      var key = JSON.stringify([items, it && it.id, S.mode]);
+      if (key !== lastListKey) {
+        lastListKey = key;
+        if (!items.length) $('list').innerHTML = '<div class="empty">Nothing here yet.<br>Tap <b>Add</b> to add pictures, Claude charts, PDFs or web pages, or drag them onto this screen.</div>';
+        else $('list').innerHTML = items.map(function (x, i) {
+          var cur = it && it.id === x.id && S.mode !== 'me';
+          return '<button type="button" class="it' + (cur ? ' cur' : '') + '" data-id="' + esc(x.id) + '"' + (cur ? ' aria-current="true"' : '') + '><span class="n">' + (i + 1) + '</span><span class="th">' + thumb(x) + '</span><span class="nm" dir="auto">' + esc(x.title) + '</span>' + (isLive(x) ? '<span class="live">Opens live</span>' : '') + '</button>';
+        }).join('');
+        var c = document.querySelector('.it.cur');
+        if (c && c.scrollIntoView) c.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }
+
+  function renderEdit() {
+    var items = (S && S.items) || [];
+    lastListKey = '';
+    if (!items.length) { $('list').innerHTML = '<div class="empty">The list is empty.</div>'; return; }
+    $('list').innerHTML = items.map(function (x, i) {
+      return '<div class="erow" data-i="' + i + '"><span class="th">' + thumb(x) + '</span>' +
+        '<label class="sr" for="nm' + i + '">Name</label><input id="nm' + i + '" type="text" dir="auto" value="' + esc(x.title) + '">' +
+        '<button class="ib" type="button" data-up="' + i + '" aria-label="Move up"' + (i === 0 ? ' disabled' : '') + '><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>' +
+        '<button class="ib" type="button" data-down="' + i + '" aria-label="Move down"' + (i === items.length - 1 ? ' disabled' : '') + '><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>' +
+        '<button class="ib del" type="button" data-del="' + i + '" aria-label="Remove"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>';
+    }).join('');
+  }
+  function saveEdits(items) {
+    return post('/api/list', { items: items });
+  }
+  function currentEdits() {
+    var items = ((S && S.items) || []).map(function (x) { return JSON.parse(JSON.stringify(x)); });
+    all('.erow').forEach(function (row) { var i = +row.getAttribute('data-i'), inp = row.querySelector('input'); if (items[i] && inp) items[i].title = inp.value.trim() || items[i].title; });
+    return items;
+  }
+
+  function renderTiles() {
+    var h = tiles.map(function (t, i) {
+      var host = ''; try { host = new URL(t.url).hostname.replace(/^www\./, ''); } catch (e) { }
+      return t.url ? '<button class="tile" type="button" data-tile="' + i + '"><b>' + esc(t.name) + '</b><small>' + esc(host) + '</small></button>'
+                   : '<button class="tile empty2" type="button" data-settile="1"><b>' + esc(t.name) + '</b><small>Tap to add its address</small></button>';
+    }).join('');
+    h += '<button class="tile files" type="button" id="myFiles">' + ICON.folder + '<b>My downloads</b></button>';
+    $('tiles').innerHTML = h;
+  }
+
+  // ---------- recent downloads ----------
+  function ago(ms) {
+    var m = Math.round((Date.now() - ms) / 60000);
+    if (m < 60) return m <= 1 ? 'just now' : m + ' min ago';
+    var h = Math.round(m / 60); if (h < 24) return h + (h === 1 ? ' hour ago' : ' hours ago');
+    var d = Math.round(h / 24); return d === 1 ? 'yesterday' : d + ' days ago';
+  }
+  function fileTile(f, extra) {
+    var pv = f.kind === 'image' ? '<img alt="" loading="lazy" src="/dl/' + encodeURIComponent(f.name) + '">' : (f.kind === 'video' ? ICON.video : f.pdf ? ICON.pdf : ICON.page);
+    var kind = f.kind === 'image' ? 'Picture' : f.kind === 'video' ? 'Video' : f.pdf ? 'PDF' : 'Chart / page';
+    return '<button type="button" class="ft" data-name="' + esc(f.name) + '"><span class="pv">' + pv + '</span><span class="fn">' + esc(f.name) + '</span><span class="fk">' + kind + ' · ' + ago(f.mtime) + '</span>' + (extra || '') + '</button>';
+  }
+  function loadRecent(grid) {
+    $(grid).innerHTML = '<div class="empty" style="grid-column:1/-1">Looking in Downloads...</div>';
+    fetch('/api/recent').then(function (r) { return r.json(); }).then(function (j) {
+      var files = j.files || [];
+      $(grid).innerHTML = files.length ? files.map(function (f) { return fileTile(f); }).join('') : '<div class="empty" style="grid-column:1/-1">No pictures, charts or PDFs in Downloads yet.</div>';
+    }).catch(function () { $(grid).innerHTML = ''; });
+  }
+
+  // ---------- actions ----------
+  all('.mode').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var mode = b.getAttribute('data-mode');
+      if (mode === 'show' && S && !S.current && S.items && S.items.length) { post('/api/next'); return; }
+      post('/api/mode', { mode: mode });
+    });
+  });
+  $('prev').onclick = $('prev2').onclick = function () { post('/api/prev'); };
+  $('next').onclick = $('next2').onclick = function () { post('/api/next'); };
+  $('picTools').addEventListener('click', function (e) { var b = e.target.closest('[data-view]'); if (b) post('/api/view', { action: b.getAttribute('data-view') }); });
+  $('playBtn').onclick = function () { post('/api/media', { action: 'toggle' }); };
+  $('restartBtn').onclick = function () { post('/api/media', { action: 'restart' }); };
+  $('panelBtn').onclick = function () { post('/api/panel', { size: 'big' }); };
+  $('smallBtn').onclick = function () { post('/api/panel', { size: 'small' }); };
+  $('setupBtn').onclick = function () { post('/api/open', { page: 'setup' }).then(opened); };
+  $('msg').onclick = function () { post('/api/open', { page: 'setup' }).then(opened); };
+  $('editTiles').onclick = function () { post('/api/open', { page: 'start' }).then(opened); };
+
+  $('list').addEventListener('click', function (e) {
+    if (!editing) { var b = e.target.closest('.it'); if (b) post('/api/show', { id: b.getAttribute('data-id') }); return; }
+    var items = currentEdits(), t;
+    if ((t = e.target.closest('[data-up]'))) { var i = +t.getAttribute('data-up'); items.splice(i - 1, 0, items.splice(i, 1)[0]); saveEdits(items).then(function (j) { if (j) { S = j; renderEdit(); } }); }
+    else if ((t = e.target.closest('[data-down]'))) { var k = +t.getAttribute('data-down'); items.splice(k + 1, 0, items.splice(k, 1)[0]); saveEdits(items).then(function (j) { if (j) { S = j; renderEdit(); } }); }
+    else if ((t = e.target.closest('[data-del]'))) {
+      if (!t.classList.contains('armed')) { t.classList.add('armed'); setTimeout(function () { t.classList.remove('armed'); }, 3000); toast('Tap the bin again to remove it'); return; }
+      items.splice(+t.getAttribute('data-del'), 1); saveEdits(items).then(function (j) { if (j) { S = j; renderEdit(); } });
+    }
+  });
+  $('list').addEventListener('change', function (e) { if (editing && e.target.tagName === 'INPUT') saveEdits(currentEdits()).then(function (j) { if (j) S = j; }); });
+  $('editBtn').onclick = function () {
+    if (editing) { saveEdits(currentEdits()).then(function (j) { if (j) S = j; editing = false; lastListKey = ''; render(); }); return; }
+    editing = true; render(); renderEdit();
+  };
+
+  $('tiles').addEventListener('click', function (e) {
+    if (e.target.closest('#myFiles')) { $('filesSheet').hidden = false; loadRecent('openGrid'); return; }
+    if (e.target.closest('[data-settile]')) { post('/api/open', { page: 'start' }).then(opened); return; }
+    var b = e.target.closest('[data-tile]'); if (!b) return;
+    var t = tiles[+b.getAttribute('data-tile')];
+    post('/api/open-url', { url: t.url }).then(opened);
+  });
+  $('filesClose').onclick = function () { $('filesSheet').hidden = true; };
+  $('openGrid').addEventListener('click', function (e) {
+    var b = e.target.closest('.ft'); if (!b) return;
+    post('/api/recent/open', { name: b.getAttribute('data-name') }).then(function (j) { if (j) { $('filesSheet').hidden = true; opened(j); } });
+  });
+
+  $('addBtn').onclick = function () { $('addSheet').hidden = false; loadRecent('addGrid'); setTimeout(function () { $('linkIn').focus(); }, 50); };
+  $('addDone').onclick = function () { $('addSheet').hidden = true; };
+  $('addGrid').addEventListener('click', function (e) {
+    var b = e.target.closest('.ft'); if (!b || b.classList.contains('added')) return;
+    post('/api/recent/add', { name: b.getAttribute('data-name') }).then(function (j) { if (j) { b.classList.add('added'); b.insertAdjacentHTML('beforeend', '<span class="ok">Added</span>'); } });
+  });
+  function addLink() {
+    var u = $('linkIn').value.trim(); if (!u) return;
+    if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+    post('/api/add-link', { url: u }).then(function (j) { if (j) { $('linkIn').value = ''; toast('Added to the list'); } });
+  }
+  $('linkAdd').onclick = addLink;
+  $('linkIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') addLink(); });
+  $('files').onchange = function () { addFiles(this.files, false); this.value = ''; };
+
+  var armed = null;
+  $('endBtn').onclick = function () {
+    var b = $('endBtn');
+    if (!armed) {
+      b.classList.add('armed'); b.textContent = 'Tap again to end';
+      armed = setTimeout(function () { armed = null; b.classList.remove('armed'); b.textContent = 'End shiur'; }, 4000);
+      return;
+    }
+    clearTimeout(armed); armed = null;
+    post('/api/end').then(function (j) { if (j) $('ended').hidden = false; });
+  };
+
+  // Drag files onto the app (or paste a picture) to add them. With the list sheet closed, the first one is shown straight away.
+  function upload(file, show) {
+    var name = file.name || 'Picture.png';
+    if (!/\.[a-z0-9]{2,4}$/i.test(name)) name += (file.type === 'image/jpeg' ? '.jpg' : '.png');
+    toast('Adding ' + name + '...');
+    return fetch('/api/upload?name=' + encodeURIComponent(name) + (show ? '&show=1' : ''), { method: 'POST', body: file })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) toast(j.error || 'Could not add it'); return j; }); })
+      .catch(function () { toast('Could not add it'); });
+  }
+  function addFiles(files, showFirst) {
+    var chain = Promise.resolve();
+    Array.prototype.slice.call(files || []).forEach(function (f, i) { chain = chain.then(function () { return upload(f, showFirst && i === 0); }); });
+    chain.then(function () { if (!$('addSheet').hidden) toast('Added to the list'); });
+  }
+  var dragDepth = 0;
+  document.addEventListener('dragenter', function (e) { e.preventDefault(); dragDepth++; $('drop').textContent = $('addSheet').hidden ? 'Drop it here to show it' : 'Drop it here to add it'; $('drop').hidden = false; });
+  document.addEventListener('dragleave', function () { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) $('drop').hidden = true; });
+  document.addEventListener('dragover', function (e) { e.preventDefault(); });
+  document.addEventListener('drop', function (e) {
+    e.preventDefault(); dragDepth = 0; $('drop').hidden = true;
+    var dt = e.dataTransfer, show = $('addSheet').hidden;
+    if (dt.files && dt.files.length) return addFiles(dt.files, show);
+    var u = (dt.getData('text/uri-list') || dt.getData('text/plain') || '').split('\n')[0].trim();
+    if (/^https?:\/\//i.test(u)) post('/api/add-link', { url: u, show: show });
+  });
+  document.addEventListener('paste', function (e) {
+    if (e.target && e.target.tagName === 'INPUT') return;
+    var files = [], items = (e.clipboardData && e.clipboardData.items) || [];
+    for (var i = 0; i < items.length; i++) if (items[i].kind === 'file') { var f = items[i].getAsFile(); if (f) files.push(f); }
+    if (files.length) { e.preventDefault(); addFiles(files, $('addSheet').hidden); }
+  });
+
+  // Big app or strip, depending on how much room the Shiur app gives this page.
+  function fit() { document.body.classList.toggle('strip', window.innerHeight < 170); }
+  window.addEventListener('resize', fit); fit();
+
+  fetch('/api/tiles').then(function (r) { return r.json(); }).then(function (j) { tiles = j.tiles || []; renderTiles(); }).catch(function () { renderTiles(); });
+
+  var lostTimer = null;
+  var es = new EventSource('/api/events');
+  es.onmessage = function (e) { clearTimeout(lostTimer); $('lost').hidden = true; S = JSON.parse(e.data); render(); };
+  es.onerror = function () { clearTimeout(lostTimer); lostTimer = setTimeout(function () { if (!S || !S.ended) $('lost').hidden = false; }, 2500); };
+})();
+</script>
+</body>
+</html>

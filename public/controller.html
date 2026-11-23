@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Shiur">
+<meta name="theme-color" content="#11151C">
+<title>Shiur remote</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/app.css">
+<style>
+:root{--bg:#11151C}
+body{min-height:100vh;display:flex;flex-direction:column}
+.bar{display:flex;align-items:center;gap:14px;padding:14px 22px}
+.bar h1{margin:0;font-family:'Frank Ruhl Libre',Georgia,serif;font-size:30px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;padding:0 22px}
+.mode{min-height:116px;border-radius:24px;border:3px solid var(--line);background:var(--surface);color:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.mode b{font-size:40px;font-weight:700;letter-spacing:.04em}
+.mode small{font-size:16px;font-weight:500;opacity:.85}
+.mode.on{background:var(--amber);border-color:var(--amber);color:var(--amberInk)}
+.mode.show.on{background:#3DBE84;border-color:#3DBE84;color:#05200F}
+.mode.screen.on{background:#5AA9F0;border-color:#5AA9F0;color:#04203A}
+@media (max-width:640px){.mode b{font-size:28px}.mode small{font-size:12px}}
+.main{flex:1;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;padding:18px 22px 22px;min-height:0}
+@media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:0}
+.preview{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;background:#0B0E13;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--muted);text-align:center;font-size:18px}
+.preview img{width:100%;height:100%;object-fit:contain}
+.preview .tag{position:absolute;top:10px;left:10px;font-size:14px;font-weight:700;padding:6px 12px;border-radius:10px}
+.tag.live{background:#3DBE84;color:#05200F}
+.tag.ready{background:var(--surface2);color:var(--muted)}
+.nowTitle{font-size:24px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav{display:grid;grid-template-columns:1fr 1.4fr;gap:12px}
+.nav .btn{min-height:72px;font-size:22px;font-weight:600;border-radius:18px}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.tool{width:60px;min-height:56px;border-radius:14px;border:1px solid var(--line2);background:var(--bg);color:var(--text);display:inline-flex;align-items:center;justify-content:center}
+.tool.wide{width:auto;padding:0 16px;font-size:16px;font-weight:600;gap:6px}
+.tool:disabled{opacity:.35}
+.listHead{display:flex;align-items:center;gap:10px}
+.listHead h2{margin:0;font-size:20px;font-weight:600;flex:1}
+.items{display:flex;flex-direction:column;gap:8px;overflow-y:auto;min-height:120px;flex:1;padding-right:2px}
+.item{display:flex;align-items:center;gap:12px;min-height:76px;padding:8px 12px 8px 8px;border-radius:16px;border:2px solid var(--line);background:var(--bg);color:var(--text);text-align:left;width:100%}
+.item.cur{border-color:#3DBE84;background:#14291F}
+.thumb{width:104px;height:58px;flex-shrink:0;border-radius:10px;background:#0B0E13;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.item .n{width:28px;font-size:18px;font-weight:700;color:var(--muted);text-align:center;flex-shrink:0}
+.item.cur .n{color:#7FE0B2}
+.item .t{flex:1;min-width:0;font-size:19px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item input{flex:1;min-width:0;min-height:52px;font-size:18px}
+.editRow{gap:8px;padding:8px}
+.editRow .tool{width:52px;flex-shrink:0}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--muted);text-align:center;font-size:18px;padding:20px;border:2px dashed var(--line2);border-radius:16px}
+.sheet{position:fixed;inset:0;background:rgba(5,7,10,.78);display:flex;align-items:center;justify-content:center;z-index:30;padding:20px}
+.sheet .box{width:100%;max-width:640px;background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:16px;max-height:92vh;overflow-y:auto}
+.sheet h2{margin:0;font-size:24px;display:flex;align-items:center;justify-content:space-between}
+.bigPick{position:relative;min-height:96px;border-radius:20px;border:2px dashed var(--amber);background:var(--amberSoft);color:var(--amberText);display:flex;align-items:center;justify-content:center;gap:12px;font-size:22px;font-weight:600;text-align:center;padding:0 16px}
+.bigPick input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:15px}
+.or:before,.or:after{content:"";flex:1;height:1px;background:var(--line)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row2 .btn{min-height:60px;font-size:18px}
+.up{display:flex;align-items:center;gap:10px;font-size:15px}
+.up .bar2{flex:1;height:8px;border-radius:4px;background:var(--surface2);overflow:hidden}
+.up .bar2 span{display:block;height:100%;width:0;background:var(--amber)}
+.up.fail{color:var(--redText)}
+.lost{position:fixed;inset:0;background:rgba(5,7,10,.85);display:flex;align-items:center;justify-content:center;z-index:40;padding:24px}
+.lost .box{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:28px;max-width:440px;text-align:center;font-size:18px;line-height:1.5}
+.editTop{display:flex;flex-direction:column;gap:10px}
+</style>
+</head>
+<body>
+<header class="bar">
+  <h1 id="title">Tonight</h1>
+  <button class="btn small" id="recBtn" type="button" hidden></button>
+  <span class="chip grey" id="status"><span class="dot"></span><span id="statusText">Connecting</span></span>
+</header>
+<div id="banner" class="banner warn" hidden></div>
+
+<div class="modes" role="group" aria-label="What everyone sees" style="margin-top:12px">
+  <button class="mode me" data-mode="me" type="button"><b>ME</b><small>Zoom sees you, wall shows the title</small></button>
+  <button class="mode show" data-mode="show" type="button"><b>SHOW</b><small>Wall and Zoom see the item</small></button>
+  <button class="mode screen" data-mode="screen" type="button"><b>SCREEN</b><small>Wall and Zoom see the laptop, live</small></button>
+</div>
+
+<main class="main">
+  <section class="panel" aria-label="On screen">
+    <div class="preview" id="preview"></div>
+    <div class="nowTitle" id="nowTitle">Nothing chosen yet</div>
+    <div class="nav">
+      <button class="btn" id="prev" type="button">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Back</button>
+      <button class="btn primary" id="next" type="button">Next
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="tools" id="tools" aria-label="Picture controls">
+      <button class="tool" data-view="out" type="button" aria-label="Smaller"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M20 20l-3.5-3.5"/></svg></button>
+      <button class="tool" data-view="in" type="button" aria-label="Bigger"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M11 8v6M20 20l-3.5-3.5"/></svg></button>
+      <button class="tool" data-view="up" type="button" aria-label="Move up"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+      <button class="tool" data-view="down" type="button" aria-label="Move down"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button class="tool" data-view="left" type="button" aria-label="Move left"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button class="tool" data-view="right" type="button" aria-label="Move right"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      <button class="tool wide" data-view="fit" type="button">Fit</button>
+      <button class="tool wide" id="playBtn" type="button" hidden>Pause</button>
+      <button class="tool wide" id="restartBtn" type="button" hidden>From start</button>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Tonight's list">
+    <div class="listHead">
+      <h2 id="listTitle">Tonight's list</h2>
+      <button class="btn small" id="editBtn" type="button">Edit</button>
+      <button class="btn small primary" id="addBtn" type="button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add</button>
+    </div>
+    <div class="editTop" id="editTop" hidden>
+      <label class="field" for="titleInput">Title on the wall when nothing is showing
+        <input id="titleInput" type="text" dir="auto" placeholder="e.g. Erchin daf 5">
+      </label>
+      <button class="btn danger" id="clearBtn" type="button">Clear the whole list</button>
+    </div>
+    <div class="items" id="items"></div>
+  </section>
+</main>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="box" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <h2><span id="sheetTitle">Add to the list</span>
+      <button class="btn small" id="closeSheet" type="button" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
+    <label class="field" style="flex-direction:row;align-items:center;gap:12px;font-size:18px;color:var(--text);cursor:pointer">
+      <input id="showNow" type="checkbox" checked style="width:28px;height:28px;accent-color:#3DBE84"> Show it straight away
+    </label>
+    <label class="bigPick">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>
+      Photo, screenshot or video from this device
+      <input id="files" type="file" accept="image/*,video/*" multiple aria-label="Photo, screenshot or video from this device">
+    </label>
+    <div id="uploads" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="or">or paste a link</div>
+    <label class="field" for="linkUrl">Web address
+      <input id="linkUrl" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://...">
+    </label>
+    <label class="field" for="linkName">Name (optional)
+      <input id="linkName" type="text" dir="auto" autocomplete="off">
+    </label>
+    <button class="btn primary" id="addLink" type="button" style="min-height:60px;font-size:19px">Show now</button>
+    <p class="hint">Tip: anything on your iPad, like an MDY chart in the app, can be shown by taking a screenshot and adding it here.</p>
+  </div>
+</div>
+
+<div class="lost" id="lost" hidden><div class="box">Can't reach the laptop.<br>Check the laptop is on and the Shiur Controller window is open. Trying again...</div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  var S = null, editing = false, saveTimer = null;
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var tt = null;
+  function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(function () { t.classList.remove('show'); }, 2400); }
+  function post(url, body) {
+    return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) { toast(j.error || 'Something went wrong'); return null; } return j; }); })
+      .catch(function () { toast('Could not reach the laptop'); return null; });
+  }
+  function isPicture(it) { return it && (it.type === 'image' || (it.type === 'link' && it.picture)); }
+  function picSrc(it) { return it.type === 'image' ? '/media/' + encodeURIComponent(it.file) : it.url; }
+  function icon(kind) {
+    if (kind === 'video') return '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>';
+    return '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg>';
+  }
+  function thumb(it) {
+    if (isPicture(it)) return '<img alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" src="' + esc(picSrc(it)) + '">';
+    return icon(it.type === 'video' ? 'video' : 'web');
+  }
+
+  function render() {
+    if (!S) return;
+    var items = S.items || [], it = S.current;
+    $('title').textContent = S.title || 'Tonight';
+    var st = $('status');
+    if (S.obs.connected && S.obs.scenesReady) { st.className = 'chip green'; $('statusText').textContent = 'Ready'; }
+    else if (S.obs.connected) { st.className = 'chip amber'; $('statusText').textContent = 'Finish setup on the laptop'; }
+    else { st.className = 'chip red'; $('statusText').textContent = 'OBS not connected'; }
+    var b = $('banner');
+    var msg = S.message || (!S.obs.connected ? (S.obs.error || 'OBS is not connected.') + ' Open the Setup page on the laptop.' : '');
+    b.hidden = !msg; b.textContent = msg; b.className = S.message ? 'banner err' : 'banner warn';
+
+    var rb = $('recBtn');
+    rb.hidden = !S.recordButton;
+    if (S.recordButton) {
+      rb.className = S.recording ? 'btn small dangerFill' : 'btn small danger';
+      rb.innerHTML = S.recording ? '<span style="width:12px;height:12px;background:#2A0607;border-radius:2px;display:inline-block"></span>Stop <span id="recTime"></span>' : '<span style="width:12px;height:12px;background:var(--red);border-radius:6px;display:inline-block"></span>Record';
+      recBase = S.recordAgoMs || 0; recAt = Date.now(); tick();
+    }
+
+    var ms = document.querySelectorAll('.mode');
+    for (var i = 0; i < ms.length; i++) { var on = ms[i].getAttribute('data-mode') === S.mode; ms[i].classList.toggle('on', on); ms[i].setAttribute('aria-pressed', on ? 'true' : 'false'); }
+
+    var live = S.mode === 'show';
+    var pv = '';
+    if (S.mode === 'screen') {
+      $('preview').innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:10px;color:#9FCBF5"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M2 20h20"/></svg><span style="font-size:20px;font-weight:600">The laptop screen is live</span><span>Whatever you do on the laptop, everyone sees.<br>Press ME when you are done.</span></div><span class="tag live" style="background:#5AA9F0;color:#04203A">ON SCREEN</span>';
+    } else {
+    if (!it) pv = '<span>Nothing chosen yet.<br>Tap something in the list.</span>';
+    else if (isPicture(it)) pv = '<img alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode(\'Picture from the web\'))" src="' + esc(picSrc(it)) + '">';
+    else pv = '<div style="display:flex;flex-direction:column;align-items:center;gap:8px">' + icon(it.type === 'video' ? 'video' : 'web') + '<span>' + esc(it.type === 'video' ? 'Video' : (it.url || '').replace(/^https?:\/\/(www\.)?/, '').slice(0, 50)) + '</span></div>';
+    if (it) pv += '<span class="tag ' + (live ? 'live' : 'ready') + '">' + (live ? 'ON SCREEN' : 'READY') + '</span>';
+    $('preview').innerHTML = pv;
+    }
+    $('nowTitle').textContent = it ? (S.currentIndex + 1) + '. ' + it.title : (items.length ? 'Tap an item, or press Next' : 'The list is empty');
+    $('prev').disabled = !items.length; $('next').disabled = !items.length;
+
+    var canZoom = !!it && isPicture(it) && S.mode !== 'screen';
+    var tb = document.querySelectorAll('[data-view]');
+    for (var k = 0; k < tb.length; k++) tb[k].disabled = !canZoom;
+    var isVideo = !!it && it.type === 'video' && S.mode !== 'screen';
+    $('playBtn').hidden = !isVideo; $('restartBtn').hidden = !isVideo;
+    $('playBtn').textContent = S.media.paused ? 'Play' : 'Pause';
+
+    $('editTop').hidden = !editing;
+    $('editBtn').textContent = editing ? 'Done' : 'Edit';
+    $('addBtn').hidden = editing;
+    $('listTitle').textContent = "Tonight's list" + (items.length ? ' (' + items.length + ')' : '');
+    if (editing && document.activeElement !== $('titleInput')) $('titleInput').value = S.title || '';
+
+    if (editing && document.activeElement && document.activeElement.closest && document.activeElement.closest('#items')) return;
+    if (!items.length) {
+      $('items').innerHTML = '<div class="empty">Nothing here yet.<button class="btn primary" type="button" id="emptyAdd">Add something</button></div>';
+      var ea = $('emptyAdd'); if (ea) ea.onclick = openSheet;
+      return;
+    }
+    var h = '';
+    for (var j = 0; j < items.length; j++) {
+      var x = items[j], cur = S.currentIndex === j;
+      if (editing) {
+        h += '<div class="item editRow" data-i="' + j + '"><span class="n">' + (j + 1) + '</span>' +
+          '<label class="sr" for="it' + j + '">Name of item ' + (j + 1) + '</label><input id="it' + j + '" type="text" dir="auto" value="' + esc(x.title) + '">' +
+          '<button class="tool" type="button" data-act="up" aria-label="Move up"' + (j === 0 ? ' disabled' : '') + '><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>' +
+          '<button class="tool" type="button" data-act="down" aria-label="Move down"' + (j === items.length - 1 ? ' disabled' : '') + '><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>' +
+          '<button class="tool" type="button" data-act="del" aria-label="Remove" style="color:var(--redText)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div>';
+      } else {
+        h += '<button type="button" class="item' + (cur ? ' cur' : '') + '" data-id="' + esc(x.id) + '"><span class="n">' + (j + 1) + '</span><span class="thumb">' + thumb(x) + '</span><span class="t" dir="auto">' + esc(x.title) + '</span></button>';
+      }
+    }
+    $('items').innerHTML = h;
+  }
+
+  var recBase = 0, recAt = 0;
+  function tick() {
+    var el = document.getElementById('recTime');
+    if (!el || !S || !S.recording) return;
+    var s = Math.floor((recBase + Date.now() - recAt) / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+    el.textContent = (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+  }
+  setInterval(tick, 1000);
+  $('recBtn').onclick = function () {
+    if (!S) return;
+    var b = $('recBtn');
+    if (S.recording && b.getAttribute('data-sure') !== '1') { b.setAttribute('data-sure', '1'); toast('Tap Stop again to end the recording'); setTimeout(function () { b.removeAttribute('data-sure'); }, 3000); return; }
+    b.removeAttribute('data-sure');
+    post('/api/record', { action: S.recording ? 'stop' : 'start' }).then(function (r) { if (r) toast(r.recording ? 'Recording' : 'Recording saved'); });
+  };
+
+  // --- actions ---
+  document.querySelector('.modes').addEventListener('click', function (e) {
+    var b = e.target.closest('.mode'); if (!b || !S) return;
+    S.mode = b.getAttribute('data-mode'); render();
+    post('/api/mode', { mode: S.mode });
+  });
+  $('next').onclick = function () { post('/api/next'); };
+  $('prev').onclick = function () { post('/api/prev'); };
+  $('tools').addEventListener('click', function (e) { var b = e.target.closest('[data-view]'); if (b && !b.disabled) post('/api/view', { action: b.getAttribute('data-view') }); });
+  $('playBtn').onclick = function () { post('/api/media', { action: 'toggle' }); };
+  $('restartBtn').onclick = function () { post('/api/media', { action: 'restart' }); };
+
+  $('items').addEventListener('click', function (e) {
+    if (!editing) { var b = e.target.closest('.item'); if (b && b.getAttribute('data-id')) post('/api/show', { id: b.getAttribute('data-id') }); return; }
+    var btn = e.target.closest('button[data-act]'); if (!btn || !S) return;
+    var i = +btn.closest('.item').getAttribute('data-i'), items = S.items.slice(), act = btn.getAttribute('data-act');
+    if (act === 'up' && i > 0) { var a = items[i - 1]; items[i - 1] = items[i]; items[i] = a; }
+    else if (act === 'down' && i < items.length - 1) { var c = items[i + 1]; items[i + 1] = items[i]; items[i] = c; }
+    else if (act === 'del') {
+      if (btn.getAttribute('data-sure') !== '1') { btn.setAttribute('data-sure', '1'); btn.style.background = 'var(--redSoft)'; toast('Tap the bin again to remove'); setTimeout(function () { if (btn.isConnected) { btn.removeAttribute('data-sure'); btn.style.background = ''; } }, 3000); return; }
+      items.splice(i, 1);
+    } else return;
+    S.items = items; render();
+    post('/api/list', { items: items });
+  });
+  $('items').addEventListener('input', function (e) {
+    var row = e.target.closest('.item'); if (!row || !S) return;
+    S.items[+row.getAttribute('data-i')].title = e.target.value;
+    clearTimeout(saveTimer); saveTimer = setTimeout(function () { post('/api/list', { items: S.items }); }, 700);
+  });
+  $('titleInput').addEventListener('input', function (e) {
+    var v = e.target.value; clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () { post('/api/list', { title: v }); }, 700);
+  });
+  $('editBtn').onclick = function () {
+    if (editing) { clearTimeout(saveTimer); if (S) post('/api/list', { title: $('titleInput').value, items: S.items }); }
+    editing = !editing; render();
+  };
+  $('clearBtn').onclick = function () {
+    var b = $('clearBtn');
+    if (b.getAttribute('data-sure') !== '1') { b.setAttribute('data-sure', '1'); b.textContent = 'Tap again to clear everything'; setTimeout(function () { b.removeAttribute('data-sure'); b.textContent = 'Clear the whole list'; }, 3000); return; }
+    post('/api/list/clear').then(function (r) { if (r) toast('List cleared'); });
+  };
+
+  function openSheet() { $('sheet').hidden = false; }
+  function closeSheet() { $('sheet').hidden = true; $('uploads').innerHTML = ''; }
+  $('addBtn').onclick = openSheet;
+  $('closeSheet').onclick = closeSheet;
+  $('sheet').addEventListener('click', function (e) { if (e.target === $('sheet')) closeSheet(); });
+  function linkBody(show) {
+    var u = $('linkUrl').value.trim();
+    if (!u) { toast('Paste a web address first'); return null; }
+    if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+    return { url: u, title: $('linkName').value.trim(), show: show };
+  }
+  function sendLink(show) {
+    var body = linkBody(show); if (!body) return;
+    post('/api/add-link', body).then(function (r) { if (!r) return; $('linkUrl').value = ''; $('linkName').value = ''; closeSheet(); toast(show ? 'On screen now' : 'Added to the list'); });
+  }
+  function showNowOn() { return $('showNow').checked; }
+  function syncShowNow() { $('addLink').textContent = showNowOn() ? 'Show now' : 'Add to list'; try { localStorage.setItem('shiurShowNow', showNowOn() ? '1' : '0'); } catch (e) { /* ignore */ } }
+  try { if (localStorage.getItem('shiurShowNow') === '0') $('showNow').checked = false; } catch (e) { /* ignore */ }
+  syncShowNow();
+  $('showNow').onchange = syncShowNow;
+  $('addLink').onclick = function () { sendLink(showNowOn()); };
+
+  $('files').addEventListener('change', function (e) {
+    var files = Array.prototype.slice.call(e.target.files || []); e.target.value = '';
+    var done = 0, total = files.length, first = true;
+    (function next() {
+      var f = files.shift(); if (!f) { if (total && done === total) { closeSheet(); toast(showNowOn() ? 'On screen now' : (total === 1 ? 'Added to the list' : total + ' added to the list')); } return; }
+      var show = first && showNowOn(); first = false;
+      upload(f, show).then(function (ok) { if (ok) done++; next(); });
+    })();
+  });
+  function upload(file, show) {
+    return new Promise(function (resolve) {
+      var row = document.createElement('div'); row.className = 'up';
+      row.innerHTML = '<span style="max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(file.name) + '</span><span class="bar2"><span></span></span><span class="pct">0%</span>';
+      $('uploads').appendChild(row);
+      var bar = row.querySelector('.bar2 span'), pct = row.querySelector('.pct');
+      var x = new XMLHttpRequest();
+      x.open('POST', '/api/upload?name=' + encodeURIComponent(file.name || 'picture.jpg') + (show ? '&show=1' : ''));
+      x.upload.onprogress = function (ev) { if (ev.lengthComputable) { var p = Math.round(ev.loaded / ev.total * 100); bar.style.width = p + '%'; pct.textContent = p + '%'; } };
+      x.onload = function () { var j = {}; try { j = JSON.parse(x.responseText); } catch (er) { /* ignore */ } if (x.status === 200 && j.item) { resolve(true); } else { row.classList.add('fail'); pct.textContent = j.error || 'Upload failed'; resolve(false); } };
+      x.onerror = function () { row.classList.add('fail'); pct.textContent = 'Upload failed'; resolve(false); };
+      x.send(file);
+    });
+  }
+
+  // --- live link to the laptop ---
+  var lostTimer = null;
+  var es = new EventSource('/api/events');
+  es.onmessage = function (e) { clearTimeout(lostTimer); $('lost').hidden = true; S = JSON.parse(e.data); render(); };
+  es.onerror = function () { clearTimeout(lostTimer); lostTimer = setTimeout(function () { $('lost').hidden = false; }, 3000); };
+})();
+</script>
+</body>
+</html>

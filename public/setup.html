@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#11151C">
+<title>Shiur setup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/app.css">
+<style>
+body{background:#11151C}
+.wrap{max-width:880px;margin:0 auto;padding:20px 20px 48px;display:flex;flex-direction:column;gap:16px}
+.addr{padding:22px;display:flex;gap:24px;align-items:center;border-color:var(--amber);flex-wrap:wrap}
+.addr .big{font-size:30px;font-weight:700;color:var(--amberText);word-break:break-all}
+#qr{background:#fff;padding:10px;border-radius:12px;line-height:0}
+#qr:empty{display:none}
+.step{padding:20px;display:flex;flex-direction:column;gap:12px}
+.step h2{margin:0;font-size:20px;font-weight:600;display:flex;align-items:center;gap:12px}
+.step h2 .n{width:34px;height:34px;border-radius:17px;background:var(--surface2);display:inline-flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.step.done h2 .n{background:#3DBE84;color:#05200F}
+.grid3{display:grid;grid-template-columns:2fr 1fr 2fr;gap:10px}
+@media (max-width:640px){.grid3{grid-template-columns:1fr}}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row select{flex:1;min-width:220px}
+.ok{color:var(--greenText)} .bad{color:var(--redText)}
+ol.how{margin:0;padding-left:20px;color:var(--muted);line-height:1.6;font-size:15px}
+.switch{display:flex;align-items:center;gap:12px;font-size:17px;cursor:pointer}
+.switch input{width:26px;height:26px;accent-color:#E9A23B}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1 class="serif">Shiur setup</h1>
+  <div class="spacer"></div>
+  <a class="btn small" href="/">Open the remote here</a>
+</header>
+
+<div class="wrap">
+  <section class="card addr">
+    <div id="qr" aria-label="QR code of the remote address"></div>
+    <div style="flex:1;min-width:260px;display:flex;flex-direction:column;gap:8px">
+      <div class="label">Optional remote: on an iPad or phone, open</div>
+      <div class="big" id="addr">...</div>
+      <p class="hint">Or point the iPad camera at the square. The iPad must be on the same Wi-Fi as this laptop.</p>
+    </div>
+  </section>
+
+  <section class="card step" id="s1">
+    <h2><span class="n">1</span>Connect to OBS</h2>
+    <div id="obsStatus" style="font-size:16px">Checking...</div>
+    <ol class="how">
+      <li>Open OBS. Click Tools, then WebSocket Server Settings.</li>
+      <li>Tick "Enable WebSocket server". Click "Show Connect Info" and copy the password.</li>
+      <li>Paste it below and click Save and connect.</li>
+    </ol>
+    <div class="grid3">
+      <label class="field" for="host">Computer<input id="host" type="text" value="127.0.0.1"></label>
+      <label class="field" for="port">Port<input id="port" type="number" value="4455"></label>
+      <label class="field" for="pw">OBS password<input id="pw" type="password" autocomplete="off"></label>
+    </div>
+    <div class="row"><button class="btn primary" id="saveObs" type="button">Save and connect</button></div>
+  </section>
+
+  <section class="card step" id="s2">
+    <h2><span class="n">2</span>Create the shiur scenes</h2>
+    <p class="hint">Sets up OBS for you: you on your own, the item with you beside it, the laptop screen with you beside it, and the wall. Nothing on show is covered. Safe to press again.</p>
+    <div class="row"><button class="btn primary" id="makeScenes" type="button">Create the shiur scenes</button><span id="scenesStatus"></span></div>
+  </section>
+
+  <section class="card step" id="s3">
+    <h2><span class="n">3</span>Choose the camera</h2>
+    <div class="row">
+      <label class="sr" for="camSel">Camera</label>
+      <select id="camSel"><option value="">Press "Find cameras"</option></select>
+      <button class="btn" id="loadCams" type="button">Find cameras</button>
+      <button class="btn primary" id="saveCam" type="button">Use this camera</button>
+    </div>
+    <span id="camStatus"></span>
+  </section>
+
+  <section class="card step" id="s3b">
+    <h2><span class="n">4</span>Choose the laptop screen (for SCREEN)</h2>
+    <p class="hint">This is the screen you work on. When you press SCREEN, everyone sees it, but not the Shiur strip at the bottom or the taskbar: those are cut out automatically when you start with the Shiur icon.</p>
+    <div class="row">
+      <label class="sr" for="scrSel">Laptop screen</label>
+      <select id="scrSel"><option value="">Press "Find screens"</option></select>
+      <button class="btn" id="loadScr" type="button">Find screens</button>
+      <button class="btn primary" id="saveScr" type="button">Use this screen</button>
+    </div>
+    <span id="scrStatus"></span>
+  </section>
+
+  <section class="card step" id="s4">
+    <h2><span class="n">5</span>The wall screen</h2>
+    <p class="hint">Plug the TV into the laptop, then pick it here (at home, one of your extra screens). It opens by itself every time from now on.</p>
+    <div class="row">
+      <label class="sr" for="monSel">Screen</label>
+      <select id="monSel"><option value="-1">In a window (for testing)</option></select>
+      <button class="btn" id="loadMons" type="button">Find screens</button>
+      <button class="btn primary" id="openRoom" type="button">Open the wall screen</button>
+    </div>
+    <span id="monStatus"></span>
+  </section>
+
+  <section class="card step" id="s5">
+    <h2><span class="n">6</span>Your Zoom meeting</h2>
+    <p class="hint">Paste your meeting link. The Shiur icon then opens your meeting by itself, and your Zoom tiles show in the Shiur app.</p>
+    <div class="row">
+      <label class="sr" for="zoomLink">Zoom meeting link</label>
+      <input id="zoomLink" type="url" placeholder="https://us02web.zoom.us/j/..." style="flex:1;min-width:240px">
+      <button class="btn primary" id="saveZoom" type="button">Save</button>
+      <button class="btn" id="testZoom" type="button">Open Zoom now</button>
+    </div>
+    <span id="zoomStatus"></span>
+    <ol class="how">
+      <li>In Zoom: Settings, Video, Camera: choose <b>OBS Virtual Camera</b>.</li>
+      <li>Same page: untick "Always show video preview dialog when joining".</li>
+      <li>Settings, Audio: tick "Automatically join audio by computer when joining a meeting".</li>
+      <li>In the meeting, choose Gallery view (tiles). Zoom remembers it.</li>
+    </ol>
+  </section>
+
+  <section class="card step" id="s7">
+    <h2><span class="n">7</span>The start page for finding things</h2>
+    <p class="hint">Big buttons for MDY, Claude, Google Images and Sefaria. Tip: in Chrome, set it as the page that opens on start (Settings, On start-up, Open a specific page: <b>http://localhost:8080/start</b>).</p>
+    <div class="row"><a class="btn primary" href="/start" target="_blank" rel="noopener">Open the start page</a></div>
+  </section>
+
+  <section class="card step" id="s6">
+    <h2><span class="n">8</span>Recording (optional, for later)</h2>
+    <label class="switch"><input id="recToggle" type="checkbox"> Show a Record button on the remote</label>
+    <p class="hint">Recordings are saved by OBS, normally in your Videos folder.</p>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var tt = null;
+  function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(function () { t.classList.remove('show'); }, 3000); }
+  function api(method, url, body) {
+    return fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'Something went wrong'); return j; }); });
+  }
+  function say(id, ok, text) { $(id).innerHTML = '<span class="' + (ok ? 'ok' : 'bad') + '">' + text + '</span>'; }
+  function fill(sel, items, current, keepWindow) {
+    sel.innerHTML = '';
+    if (keepWindow) { var w = document.createElement('option'); w.value = '-1'; w.textContent = 'In a window (for testing)'; sel.appendChild(w); }
+    items.forEach(function (it) {
+      var o = document.createElement('option'); o.value = String(it.value); o.textContent = it.name;
+      if (String(it.value) === String(current)) o.selected = true;
+      sel.appendChild(o);
+    });
+    if (!items.length && !keepWindow) { var e = document.createElement('option'); e.value = ''; e.textContent = 'Nothing found'; sel.appendChild(e); }
+  }
+  var status = null, qrDone = '', zoomDirty = false;
+  function refresh() {
+    return api('GET', '/api/setup/status').then(function (s) {
+      status = s;
+      var addr = s.addresses.length ? 'http://' + s.addresses[0] + ':' + s.port : '';
+      $('addr').textContent = addr || 'No Wi-Fi network found on this laptop';
+      if (addr && qrDone !== addr && window.QRCode) { $('qr').innerHTML = ''; new QRCode($('qr'), { text: addr, width: 150, height: 150 }); qrDone = addr; }
+      if (document.activeElement !== $('host')) $('host').value = s.obsHost;
+      if (document.activeElement !== $('port')) $('port').value = s.obsPort;
+      $('pw').placeholder = s.passwordSet ? '(saved)' : 'Paste the OBS password';
+      if (s.obs.connected) say('obsStatus', true, 'Connected to OBS.'); else say('obsStatus', false, s.obs.error || 'Not connected');
+      $('s1').classList.toggle('done', s.obs.connected);
+      $('s2').classList.toggle('done', !!s.obs.scenesReady);
+      $('scenesStatus').innerHTML = s.obs.scenesReady ? '<span class="ok">Ready.</span>' : '';
+      $('s3').classList.toggle('done', !!s.cameraDevice);
+      $('s3b').classList.toggle('done', s.screenMonitor !== '' && s.screenMonitor !== null && s.screenMonitor !== undefined);
+      $('s4').classList.toggle('done', s.roomMonitor !== null && s.roomMonitor !== undefined);
+      $('s6').classList.toggle('done', !!s.recordButton);
+      $('s5').classList.toggle('done', !!s.zoomLink);
+      if (document.activeElement !== $('zoomLink') && !zoomDirty) $('zoomLink').value = s.zoomLink || '';
+      $('recToggle').checked = !!s.recordButton;
+      var ready = s.obs.connected && s.obs.scenesReady;
+      $('makeScenes').disabled = !s.obs.connected;
+      ['loadCams', 'saveCam', 'loadScr', 'saveScr', 'loadMons', 'openRoom'].forEach(function (id) { $(id).disabled = !ready; });
+    }).catch(function () { say('obsStatus', false, 'The Shiur Controller window seems to be closed.'); });
+  }
+  $('saveObs').onclick = function () {
+    api('POST', '/api/setup/obs', { obsHost: $('host').value, obsPort: $('port').value, obsPassword: $('pw').value })
+      .then(function () { $('pw').value = ''; toast('Connecting to OBS...'); setTimeout(refresh, 1500); })
+      .catch(function (e) { toast(e.message); });
+  };
+  $('makeScenes').onclick = function () {
+    $('makeScenes').disabled = true; $('scenesStatus').textContent = 'Working...';
+    api('POST', '/api/setup/scenes').then(function () { toast('Scenes ready'); refresh(); })
+      .catch(function (e) { say('scenesStatus', false, e.message); $('makeScenes').disabled = false; });
+  };
+  $('loadCams').onclick = function () { api('GET', '/api/setup/cameras').then(function (j) { fill($('camSel'), j.items, status && status.cameraDevice, false); }).catch(function (e) { say('camStatus', false, e.message); }); };
+  $('saveCam').onclick = function () {
+    if (!$('camSel').value) { toast('Press Find cameras and pick one first'); return; }
+    api('POST', '/api/setup/camera', { value: $('camSel').value }).then(function () { say('camStatus', true, 'Camera set.'); refresh(); }).catch(function (e) { say('camStatus', false, e.message); });
+  };
+  var scrItems = [];
+  $('loadScr').onclick = function () {
+    api('GET', '/api/setup/screens').then(function (j) { scrItems = j.items; fill($('scrSel'), j.items, status && status.screenMonitor, false); }).catch(function (e) { say('scrStatus', false, e.message); });
+  };
+  $('saveScr').onclick = function () {
+    var v = $('scrSel').value, it = scrItems.filter(function (x) { return String(x.value) === v; })[0];
+    if (!it) { toast('Press Find screens and pick one first'); return; }
+    api('POST', '/api/setup/screen', { value: it.value, prop: it.prop }).then(function () { say('scrStatus', true, 'Laptop screen set.'); refresh(); }).catch(function (e) { say('scrStatus', false, e.message); });
+  };
+  $('loadMons').onclick = function () { api('GET', '/api/setup/monitors').then(function (j) { fill($('monSel'), j.items, status && status.roomMonitor, true); }).catch(function (e) { say('monStatus', false, e.message); }); };
+  $('openRoom').onclick = function () {
+    api('POST', '/api/setup/room-screen', { value: $('monSel').value }).then(function () { say('monStatus', true, 'Wall screen opened.'); refresh(); }).catch(function (e) { say('monStatus', false, e.message); });
+  };
+  $('zoomLink').oninput = function () { zoomDirty = true; };
+  $('saveZoom').onclick = function () {
+    api('POST', '/api/setup/zoom', { link: $('zoomLink').value }).then(function () { zoomDirty = false; say('zoomStatus', true, $('zoomLink').value ? 'Saved. The Shiur icon will open this meeting.' : 'Cleared.'); refresh(); })
+      .catch(function (e) { say('zoomStatus', false, e.message); });
+  };
+  $('testZoom').onclick = function () {
+    if (!status || !status.zoomLink) { say('zoomStatus', false, 'Paste and save your meeting link first.'); return; }
+    api('POST', '/api/open-zoom').then(function (j) { if (j.setup) say('zoomStatus', false, 'Paste and save your meeting link first.'); else say('zoomStatus', true, 'Opening Zoom...'); })
+      .catch(function (e) { say('zoomStatus', false, e.message); });
+  };
+  $('recToggle').onchange = function (e) { api('POST', '/api/setup/record-button', { on: e.target.checked }).then(function () { toast(e.target.checked ? 'Record button is on the remote' : 'Record button hidden'); refresh(); }); };
+  refresh();
+  setInterval(refresh, 3000);
+})();
+</script>
+</body>
+</html>

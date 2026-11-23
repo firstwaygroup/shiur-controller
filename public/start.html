@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#11151C">
+<title>Shiur start page</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/app.css">
+<style>
+body{background:#11151C;min-height:100vh}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 24px 48px;display:flex;flex-direction:column;gap:22px}
+.head{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.head h1{margin:0;font-family:'Frank Ruhl Libre',Georgia,serif;font-size:36px;flex:1}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+.tile{min-height:150px;border-radius:24px;border:2px solid var(--line);background:var(--surface);color:var(--text);text-decoration:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:28px;font-weight:700;padding:16px;text-align:center}
+.tile:hover,.tile:focus-visible{border-color:var(--amber)}
+.tile small{font-size:14px;font-weight:500;color:var(--muted);word-break:break-all}
+.tile.empty{border-style:dashed;color:var(--muted)}
+.edit{display:flex;flex-direction:column;gap:10px}
+.erow{display:grid;grid-template-columns:1fr 2fr auto;gap:10px;align-items:center}
+@media (max-width:640px){.erow{grid-template-columns:1fr}}
+.tip{color:var(--muted);font-size:16px;line-height:1.5;margin:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>Find something to show</h1>
+    <button class="btn small" id="editBtn" type="button">Edit buttons</button>
+  </div>
+  <div class="tiles" id="tiles"></div>
+  <div class="card edit" id="edit" style="padding:20px" hidden>
+    <div class="label">Buttons on this page</div>
+    <div id="rows" class="edit"></div>
+    <div class="row" style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" id="addRow" type="button">Add a button</button>
+      <button class="btn primary" id="saveBtn" type="button">Save</button>
+    </div>
+  </div>
+  <p class="tip">While you look, keep the remote on ME so everyone sees you. When it's ready, press SCREEN. Files you saved (like charts from Claude) open with a double-click from your Downloads folder.</p>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var tiles = [], editing = false;
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var tt = null;
+  function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(function () { t.classList.remove('show'); }, 2400); }
+  function host(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
+  function render() {
+    $('tiles').innerHTML = tiles.map(function (t) {
+      if (!t.url) return '<button type="button" class="tile empty" data-edit="1">' + esc(t.name) + '<small>Tap Edit buttons to add its web address</small></button>';
+      return '<a class="tile" href="' + esc(t.url) + '">' + esc(t.name) + '<small>' + esc(host(t.url)) + '</small></a>';
+    }).join('');
+    $('edit').hidden = !editing;
+    $('editBtn').textContent = editing ? 'Close' : 'Edit buttons';
+    if (editing) {
+      $('rows').innerHTML = tiles.map(function (t, i) {
+        return '<div class="erow" data-i="' + i + '"><label class="sr" for="n' + i + '">Name</label><input id="n' + i + '" type="text" value="' + esc(t.name) + '" placeholder="Name">' +
+          '<label class="sr" for="u' + i + '">Web address</label><input id="u' + i + '" type="url" value="' + esc(t.url) + '" placeholder="https://...">' +
+          '<button class="btn small danger" type="button" data-del="' + i + '">Remove</button></div>';
+      }).join('');
+    }
+  }
+  function collect() {
+    var rows = document.querySelectorAll('.erow');
+    var out = [];
+    for (var i = 0; i < rows.length; i++) {
+      var n = rows[i].querySelector('input[type=text]').value.trim();
+      var u = rows[i].querySelector('input[type=url]').value.trim();
+      if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u;
+      if (n) out.push({ name: n, url: u });
+    }
+    return out;
+  }
+  $('editBtn').onclick = function () { editing = !editing; render(); };
+  $('tiles').addEventListener('click', function (e) { if (e.target.closest('[data-edit]')) { editing = true; render(); } });
+  $('rows').addEventListener('click', function (e) { var b = e.target.closest('[data-del]'); if (!b) return; tiles = collect(); tiles.splice(+b.getAttribute('data-del'), 1); render(); });
+  $('addRow').onclick = function () { tiles = collect(); tiles.push({ name: 'New', url: '' }); render(); };
+  $('saveBtn').onclick = function () {
+    tiles = collect();
+    fetch('/api/tiles', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tiles: tiles }) })
+      .then(function (r) { return r.json(); }).then(function (j) { tiles = j.tiles || tiles; editing = false; render(); toast('Saved'); })
+      .catch(function () { toast('Could not save'); });
+  };
+  fetch('/api/tiles').then(function (r) { return r.json(); }).then(function (j) { tiles = j.tiles || []; render(); });
+})();
+</script>
+</body>
+</html>

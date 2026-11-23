@@ -93,6 +93,9 @@ C# must stay **C# 5** (no `$""`, `?.`, `=>` members, `nameof`). Check with mono 
   (questions/dialogs) are brought onto the laptop screen when not in SCREEN mode.
 - A zip downloaded in a browser marks its files "from the internet" (Windows warns before running them). `Install Shiur.bat`
   clears the mark on the installed files with `Unblock-File`. The updater downloads with WebClient, which adds no mark.
+- The browser may open a page on another screen (wherever it was last). So when the engine opens a page (a live list
+  item, a Find something button, My downloads) it sends the app a window job (`live` / `browser`), and the app moves the
+  browser window onto the laptop (primary) screen, maximised, so SCREEN shows it.
 - The laptop camera is soft; a 1080p USB webcam on a small stand is planned. The engine sets the camera to its best
   resolution and OBS output to at least 1280x720.
 

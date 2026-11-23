@@ -400,7 +400,8 @@ function getPreview() {
 // ---------- starting and ending (Windows, when started by the Shiur icon) ----------
 
 const launch = { obsStartedByUs: false, zoomOpened: false };
-// Small jobs for the Shiur app on the laptop, which moves windows: bring Zoom to the front, or put it behind.
+// Small jobs for the Shiur app on the laptop, which moves windows: bring Zoom to the front, or put it behind,
+// and bring a page just opened in the browser onto the laptop screen (live / browser).
 const winCmd = { seq: 0, action: null };
 function windowJob(action) { winCmd.seq++; winCmd.action = action; }
 function localUrl(p) { return 'http://localhost:' + config.port + p; }
@@ -523,9 +524,12 @@ let roomIds = null;
 async function setWall(showTitle, showScreen) {
   if (!roomIds) roomIds = {
     title: (await obs.call('GetSceneItemId', { sceneName: SCENES.room, sourceName: INPUTS.title })).sceneItemId,
-    screen: (await obs.call('GetSceneItemId', { sceneName: SCENES.room, sourceName: INPUTS.screen })).sceneItemId
+    screen: (await obs.call('GetSceneItemId', { sceneName: SCENES.room, sourceName: INPUTS.screen })).sceneItemId,
+    item: (await obs.call('GetSceneItemId', { sceneName: SCENES.room, sourceName: INPUTS.item })).sceneItemId
   };
   await obs.call('SetSceneItemEnabled', { sceneName: SCENES.room, sceneItemId: roomIds.screen, sceneItemEnabled: showScreen });
+  // While the laptop screen shows, the list item behind it is hidden, so nothing peeks out above or below it.
+  await obs.call('SetSceneItemEnabled', { sceneName: SCENES.room, sceneItemId: roomIds.item, sceneItemEnabled: !showScreen });
   await obs.call('SetSceneItemEnabled', { sceneName: SCENES.room, sceneItemId: roomIds.title, sceneItemEnabled: showTitle });
 }
 
@@ -552,7 +556,7 @@ function showItem(id) {
   if (isLive(item)) {
     // Open it on the laptop and show the screen, so it can be clicked through live.
     openUrl(liveUrl(item));
-    if (state.mode !== 'screen') windowJob('zoomBack');
+    windowJob('live');   // the Shiur app tucks Zoom away and brings the page onto the laptop screen
     state.mode = 'screen';
     state.panel = 'small';
   } else {
@@ -797,6 +801,11 @@ async function route(req, res) {
 
     if (p === '/api/mode') {
       if (!['me', 'show', 'screen'].includes(body.mode)) return json(res, 400, { error: 'Bad mode' });
+      // A chart or web page is never shown as a still copy: SHOW opens it live, the same as tapping it in the list.
+      if (body.mode === 'show' && isLive(currentItem())) {
+        if (state.mode === 'screen') return json(res, 200, publicState());   // already open live
+        return json(res, 200, await update(() => showItem(state.currentId)));
+      }
       if (body.mode === 'screen' && state.mode !== 'screen') windowJob('zoomBack');   // keep Zoom's own window out of the picture
       return json(res, 200, await update(() => { state.mode = body.mode; state.panel = body.mode === 'screen' ? 'small' : 'big'; }));
     }
@@ -810,6 +819,7 @@ async function route(req, res) {
       const u = String(body.url || '');
       if (!/^https?:\/\//i.test(u)) return json(res, 400, { error: 'That button has no web address yet.' });
       const opened = openUrl(u);
+      if (opened) windowJob('browser');   // the Shiur app brings it onto the laptop screen
       await update(() => { state.panel = 'small'; });
       return json(res, 200, { opened, url: u });
     }
@@ -819,6 +829,7 @@ async function route(req, res) {
       if (p === '/api/recent/open') {
         const u = localUrl('/dl/' + encodeURIComponent(f.name));
         const opened = openUrl(u);
+        if (opened) windowJob('browser');
         await update(() => { state.panel = 'small'; });
         return json(res, 200, { opened, url: '/dl/' + encodeURIComponent(f.name) });
       }

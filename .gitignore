@@ -1,0 +1,8 @@
+node_modules/
+data/
+out/
+*.zip
+Shiur.exe
+*.dll
+version.txt
+app/build-log.txt

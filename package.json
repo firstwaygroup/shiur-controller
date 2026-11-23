@@ -1,0 +1,16 @@
+{
+  "name": "shiur-controller",
+  "version": "1.0.0",
+  "description": "Shiur Controller: wall screen, Zoom and OBS for a hybrid Daf Yomi shiur",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node test/run-tests.js",
+    "start": "node server.js"
+  },
+  "devDependencies": {
+    "ws": "^8.23.0"
+  },
+  "private": true
+}

@@ -1,0 +1,31 @@
+SHIUR - how to start
+
+FIRST TIME ONLY
+  Double-click "Install Shiur".
+  It copies everything onto this laptop, keeps your settings and list,
+  and puts a Shiur icon on your desktop.
+
+EVERY NIGHT
+  1. Tap the Shiur icon.
+     Everything starts by itself: OBS (hidden), the wall screen,
+     your Zoom meeting, and the Shiur app.
+
+  2. The Shiur app has two sizes:
+     BIG (ME or SHOW - nobody sees your laptop):
+       Zoom tiles on the left, big buttons, tonight's list, Find something.
+     STRIP along the bottom (SCREEN, or while you look something up):
+       Everyone sees everything above the strip.
+
+     ME        Zoom sees you. The wall shows the title.
+     SHOW      The wall and Zoom see the picture or video from the list.
+     SCREEN    The wall and Zoom see your screen (not the strip).
+     Charts and web pages in the list open live on your screen.
+     Tap the Zoom tiles to open Zoom big; tap again to put it back.
+
+  3. Before the shiur: tap Add to fill tonight's list
+     (files from the laptop, your recent downloads, or a web address).
+
+  4. At the end, tap End shiur (twice), then end the meeting in Zoom.
+
+IF SOMETHING IS WRONG
+  Tap Setup at the top of the app.

@@ -11,6 +11,7 @@
 9. Never delete data. Archive it instead. Anything that can't be undone needs my OK first.
 10. Keep it simple: big clear buttons, plain words. Hebrew runs right to left everywhere.
 11. When a job's done, mark it Done on the board and update "where we're up to".
+12. Before a chat ends, put anything unfinished on the board as a To do job with a handover note, or, if you can't reach the board, give me the job text to add.
 
 Job board: https://claude.ai/artifact/BorE9SeCtVdAcgwbqgijGQ
 

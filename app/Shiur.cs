@@ -265,7 +265,7 @@ namespace ShiurApp
         public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
         public static readonly IntPtr HWND_NOTOPMOST = new IntPtr(-2);
         public const uint SWP_NOSIZE = 0x1, SWP_NOMOVE = 0x2, SWP_NOZORDER = 0x4, SWP_NOACTIVATE = 0x10, SWP_SHOWWINDOW = 0x40;
-        public const int SW_RESTORE = 9, SW_SHOWNOACTIVATE = 4;
+        public const int SW_RESTORE = 9, SW_SHOWNOACTIVATE = 4, SW_MAXIMIZE = 3;
         public const int GWL_EXSTYLE = -20;
         public const int WS_EX_TOPMOST = 0x8, WS_EX_TOOLWINDOW = 0x80, WS_EX_NOACTIVATE = 0x08000000;
         public const int WM_CLOSE = 0x10, WM_DISPLAYCHANGE = 0x7E, WM_SETTINGCHANGE = 0x1A, WM_DPICHANGED = 0x2E0;
@@ -359,6 +359,9 @@ namespace ShiurApp
         readonly Dictionary<uint, string> processNames = new Dictionary<uint, string>();
         readonly HashSet<string> loggedZoomWindows = new HashSet<string>();
         readonly HashSet<IntPtr> dialogsMoved = new HashSet<IntPtr>();
+
+        // A web page or file just opened from the app: bring its browser window onto the laptop screen
+        DateTime browserHomeFrom = DateTime.MinValue, browserHomeUntil = DateTime.MinValue;
 
         // talking to the engine
         System.Windows.Forms.Timer timer;
@@ -645,6 +648,7 @@ namespace ShiurApp
             if (useChrome) KeepBarInPlace();
             KeepZoomInPlace();
             CheckZoomDialogs();
+            if (DateTime.Now < browserHomeUntil) BringBrowserHome();
             ReportScreen();
             if (Interlocked.CompareExchange(ref pinging, 1, 0) == 0)
             {
@@ -695,6 +699,60 @@ namespace ShiurApp
             string action = a.Success ? a.Groups[1].Value : "";
             if (action == "zoomBack") ParkZoom();
             else if (action == "zoomFront") ZoomBig();
+            else if (action == "live") { ParkZoom(); StartBrowserHome(); }
+            else if (action == "browser") StartBrowserHome();
+        }
+
+        // ---------- pages opened from the app go on the laptop screen ----------
+
+        // The browser may open a page on another screen (where it was last). Then SCREEN would show the empty desktop.
+        // So for a few seconds, look for the browser window and move it onto the laptop screen, full size.
+        void StartBrowserHome()
+        {
+            browserHomeFrom = DateTime.Now;
+            browserHomeUntil = DateTime.Now.AddSeconds(8);
+        }
+
+        void BringBrowserHome()
+        {
+            IntPtr pick = IntPtr.Zero;
+            IntPtr fg = Native.GetForegroundWindow();
+            if (IsBrowserWindow(fg)) pick = fg;
+            // If the browser did not come to the front by itself, after a moment take the browser window nearest the top.
+            if (pick == IntPtr.Zero && (DateTime.Now - browserHomeFrom).TotalSeconds > 2.5)
+            {
+                Native.EnumWindows(delegate(IntPtr h, IntPtr l)
+                {
+                    if (!IsBrowserWindow(h)) return true;
+                    pick = h;
+                    return false;
+                }, IntPtr.Zero);
+            }
+            if (pick == IntPtr.Zero) return;
+            browserHomeUntil = DateTime.MinValue;
+            IntPtr primary = Native.PrimaryMonitor();
+            if (Native.MonitorFromWindow(pick, 2) != primary || !Native.IsZoomed(pick))
+            {
+                Rectangle work = Native.ToRect(Native.MonitorInfo(primary).rcWork);
+                if (Native.IsIconic(pick) || Native.IsZoomed(pick)) Native.ShowWindow(pick, Native.SW_RESTORE);
+                Native.SetWindowPos(pick, Native.HWND_TOP, work.X, work.Y, work.Width, work.Height, Native.SWP_SHOWWINDOW);
+                Native.ShowWindow(pick, Native.SW_MAXIMIZE);
+                Engine.Log("Brought the browser onto the laptop screen: " + Native.Title(pick));
+            }
+            ForceForeground(pick);
+        }
+
+        bool IsBrowserWindow(IntPtr h)
+        {
+            if (h == IntPtr.Zero || h == Handle || (useChrome && h == barWnd) || !Native.IsWindowVisible(h)) return false;
+            string title = Native.Title(h);
+            if (title.Length == 0 || title.StartsWith("Shiur bar")) return false;
+            uint pid;
+            Native.GetWindowThreadProcessId(h, out pid);
+            string name = ProcessName(pid).ToLowerInvariant();
+            if (name != "chrome" && name != "msedge" && name != "firefox" && name != "brave" && name != "opera" && name != "vivaldi") return false;
+            Rectangle r = Native.WindowRect(h);
+            return Native.IsIconic(h) || (r.Width >= 400 && r.Height >= 300);
         }
 
         // ---------- the backup browser window for the controls ----------

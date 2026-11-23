@@ -266,7 +266,7 @@ async function checkScenes() {
 
 // Make the picture sharp: OBS at least 1280x720 (16:9), and the camera at its best size.
 let qualityChecked = false, relayoutTried = false;
-const LAYOUT_VERSION = 2;   // raise this when the way things sit in the picture changes, so OBS is updated by itself
+const LAYOUT_VERSION = 3;   // raise this when the way things sit in the picture changes, so OBS is updated by itself
 async function ensureVideoQuality() {
   const v = await obs.call('GetVideoSettings');
   const baseOk = v.baseWidth >= 1280 && v.baseHeight >= 720 && Math.abs(v.baseWidth / v.baseHeight - 16 / 9) < 0.02;
@@ -351,14 +351,11 @@ async function toTop(sceneName, sceneItemId) {
   await obs.call('SetSceneItemIndex', { sceneName, sceneItemId, sceneItemIndex: Math.max(0, (l.sceneItems || []).length - 1) });
 }
 
-// Where things sit in the Zoom picture: content on the left, you in a column on the right.
+// What Zoom sees: in ME, you; in SHOW and SCREEN, only the material, as big as it can be (people watch on phones).
 let videoSize = { w: 1920, h: 1080 };
-function layout(W, H) {
-  const m = Math.round(W * 0.012);
-  const cw = Math.round(W * 0.21), ch = Math.round(cw * 9 / 16);
-  const contentW = W - cw - 3 * m;
-  const top = Math.max(m, Math.round((H - contentW * 9 / 16) / 2));
-  return { full: { x: 0, y: 0, w: W, h: H }, content: { x: m, y: 0, w: contentW, h: H }, side: { x: W - cw - m, y: top, w: cw, h: ch } };
+async function hideItem(sceneName, sourceName) {
+  const id = await ensureItem(sceneName, sourceName, false);
+  await obs.call('SetSceneItemEnabled', { sceneName, sceneItemId: id, sceneItemEnabled: false });
 }
 
 // The button bar sits on the edge of the laptop screen. The Shiur app tells us where the free part of the
@@ -475,7 +472,7 @@ async function setupScenes() {
   const video = await obs.call('GetVideoSettings');
   const W = video.baseWidth || 1920, H = video.baseHeight || 1080;
   videoSize = { w: W, h: H };
-  const L = layout(W, H), full = L.full;
+  const full = { x: 0, y: 0, w: W, h: H };
 
   const scenes = new Set(((await obs.call('GetSceneList')).scenes || []).map(s => s.sceneName));
   for (const name of [SCENES.me, SCENES.show, SCENES.screen, SCENES.room]) if (!scenes.has(name)) await obs.call('CreateScene', { sceneName: name });
@@ -496,16 +493,12 @@ async function setupScenes() {
 
   // Me: camera fills the picture.
   await place(SCENES.me, await ensureItem(SCENES.me, INPUTS.camera), full);
-  // Show (what Zoom sees): the item large on the left, you in a small box beside it. Nothing is covered.
-  await place(SCENES.show, await ensureItem(SCENES.show, INPUTS.item), L.content);
-  const cam = await ensureItem(SCENES.show, INPUTS.camera);
-  await place(SCENES.show, cam, L.side);
-  await toTop(SCENES.show, cam);
-  // Screen (what Zoom sees): the laptop screen large on the left, you beside it.
-  await place(SCENES.screen, await ensureItem(SCENES.screen, INPUTS.screen), L.content);
-  const cam2 = await ensureItem(SCENES.screen, INPUTS.camera);
-  await place(SCENES.screen, cam2, L.side);
-  await toTop(SCENES.screen, cam2);
+  // Show (what Zoom sees): the item, full size. You are not shown, so it is as big as possible on phones.
+  await place(SCENES.show, await ensureItem(SCENES.show, INPUTS.item), full);
+  await hideItem(SCENES.show, INPUTS.camera);
+  // Screen (what Zoom sees): the laptop screen, full size.
+  await place(SCENES.screen, await ensureItem(SCENES.screen, INPUTS.screen), full);
+  await hideItem(SCENES.screen, INPUTS.camera);
   // Wall: the item; the laptop screen above it in SCREEN mode; the title card on top when nothing is shown.
   await place(SCENES.room, await ensureItem(SCENES.room, INPUTS.item), full);
   const scr = await ensureItem(SCENES.room, INPUTS.screen, false);

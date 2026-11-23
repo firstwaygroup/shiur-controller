@@ -2,7 +2,8 @@
 
 Moshe's own app for his nightly Daf Yomi shiur (in English, at Chevras Shas, 8:05–9:00pm). About 8 people sit in the
 room facing him; 5–8 more join on Zoom (open link, mostly muted, cameras off). He sits at a small table with his back
-to the wall. A TV on the wall behind him shows material to the room; Zoom sees the same material with him beside it.
+to the wall. A TV on the wall behind him shows material to the room; Zoom sees the same material, full size (Moshe isn't
+shown with it: many watch on phones, so the material must be as big as possible — his decision, Nov 2026).
 Rule from Moshe: **nothing fancy, nothing complicated** — big buttons, simple words.
 
 ## How Moshe likes to work
@@ -21,8 +22,8 @@ Three modes, chosen in the Shiur app:
 | Mode   | Zoom sees                                   | Wall TV sees            | Shiur app on the laptop       |
 |--------|---------------------------------------------|-------------------------|-------------------------------|
 | ME     | Moshe's camera, full                         | Title card (list title) | Big: fills the screen         |
-| SHOW   | The list item, large, with Moshe beside it   | The list item, full     | Big                           |
-| SCREEN | The laptop screen (above the strip), with Moshe beside it | The laptop screen | Small: a strip along the bottom |
+| SHOW   | The list item, full size                     | The list item, full     | Big                           |
+| SCREEN | The laptop screen (above the strip), full size | The laptop screen     | Small: a strip along the bottom |
 
 - **Tonight's list**: pictures, videos, Claude charts (.html), PDFs, web links. Pictures/videos are SHOWn through
   OBS. Charts, PDFs and web pages **open live** in the browser on the laptop and switch to SCREEN, so he can click

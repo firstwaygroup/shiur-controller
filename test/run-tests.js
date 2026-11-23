@@ -58,8 +58,9 @@ async function main() {
   check('all four scenes exist', ['Shiur - Me', 'Shiur - Material', 'Shiur - Screen', 'Shiur - Room'].every(n => st.scenes.includes(n)), st.scenes);
   check('OBS picture set to at least 1280x720', st.video.outputWidth >= 1280 && st.video.outputHeight >= 720, st.video);
   check('virtual camera for Zoom is on', st.vc === true);
-  const cam = item('Shiur - Material', 'Shiur Camera').transform, mat = item('Shiur - Material', 'Shiur Material').transform;
-  check('on Zoom, you sit beside the item, not on top', cam.positionX >= mat.positionX + mat.boundsWidth, { cam: cam.positionX, matEnd: mat.positionX + mat.boundsWidth });
+  const mat = item('Shiur - Material', 'Shiur Material').transform, scr = item('Shiur - Screen', 'Shiur Laptop Screen').transform;
+  check('on Zoom, the item and the screen fill the whole picture', mat.positionX === 0 && mat.boundsWidth === st.video.baseWidth && scr.positionX === 0 && scr.boundsWidth === st.video.baseWidth, { mat, scr });
+  check('on Zoom, you are not shown with the item or the screen', item('Shiur - Material', 'Shiur Camera').enabled === false && item('Shiur - Screen', 'Shiur Camera').enabled === false);
 
   console.log('Modes and the app size');
   let s = await post('/api/mode', { mode: 'screen' });

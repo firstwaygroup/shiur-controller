@@ -1,0 +1,57 @@
+# Every push to main: test the engine, build the Windows app, and publish a release.
+# The Shiur app on the laptop checks for the newest release each time it starts and updates itself.
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Test the engine against a pretend OBS
+        run: |
+          npm ci
+          node --check server.js
+          npm test
+
+      - name: Get WebView2 (shows the controls inside the app)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force out | Out-Null
+          ./app/get-webview.ps1 -Dest out
+          if (-not (Test-Path out/Microsoft.Web.WebView2.WinForms.dll)) { throw 'WebView2 download failed' }
+
+      - name: Build Shiur.exe
+        shell: cmd
+        run: |
+          "%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /nologo /target:winexe /optimize+ /define:WEBVIEW2 /out:out\Shiur.exe /win32icon:app\shiur.ico /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll /r:out\Microsoft.Web.WebView2.Core.dll /r:out\Microsoft.Web.WebView2.WinForms.dll app\Shiur.cs
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $version = "v1.$env:GITHUB_RUN_NUMBER"
+          Copy-Item server.js, 'Install Shiur.bat', 'How to start.txt' out/
+          Copy-Item -Recurse public out/public
+          Copy-Item -Recurse app out/app
+          Set-Content -Path out/version.txt -Value $version -NoNewline
+          Compress-Archive -Path out/* -DestinationPath shiur-app.zip -Force
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh release create $env:VERSION shiur-app.zip --title "Shiur $env:VERSION" --notes "Built from $env:GITHUB_SHA"

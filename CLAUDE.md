@@ -13,7 +13,7 @@
 11. When a job's done, mark it Done on the board and update "where we're up to".
 12. Before a chat ends, put anything unfinished on the board as a To do job with a handover note, or, if you can't reach the board, give me the job text to add.
 
-Job board: https://claude.ai/artifact/BorE9SeCtVdAcgwbqgijGQ
+Job board (Work Log): https://claude.ai/artifact/VmgxdD2AX2YP8aYvVJSVia
 
 ---
 

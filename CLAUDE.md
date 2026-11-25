@@ -12,6 +12,7 @@
 10. Keep it simple: big clear buttons, plain words. Hebrew runs right to left everywhere.
 11. When a job's done, mark it Done on the board and update "where we're up to".
 12. Before a chat ends, put anything unfinished on the board as a To do job with a handover note, or, if you can't reach the board, give me the job text to add.
+13. When you start a job, add it to the board (Work Log) with a short name, its app and step, and update its step and status as you go. Board data: artifact e8fd3be6-edd4-43f3-a7f6-2084220a6a93, documents jobs/<id>, same fields as the other jobs.
 
 Job board (Work Log): https://claude.ai/artifact/VmgxdD2AX2YP8aYvVJSVia
 
